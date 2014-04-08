@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+
+    <script type="text/javascript" src="jsqrcode/src/grid.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/version.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/detector.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/formatinf.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/errorlevel.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/bitmat.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/datablock.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/bmparser.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/datamask.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/rsdecoder.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/gf256poly.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/gf256.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/decoder.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/qrcode.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/findpat.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/alignpat.js"></script>
+    <script type="text/javascript" src="jsqrcode/src/databr.js"></script>
+</head>
+<body>
+<canvas id="qr-canvas" style="display: none;"></canvas>
+<video id="webcam" width="768" height="576" autoplay="" style="display: none;"></video>
+
+<!--div id="webcamcontrols">
+    <button class="recordbutton" onclick="startRecording();">RECORD</button>
+</div-->
+
+<button id="capture" onclick="captureImage()">Capture</button>
+
+<div id="output"></div>
+
+<canvas id="video-canvas" style="display: hidden;"></canvas>
+
+<script language="javascript" type="text/javascript">
+    "use strict";
+
+    function onVideoFail(e) {
+        console.log('webcam fail!', e);
+    };
+
+    function hasGetUserMedia() {
+        // Note: Opera is unprefixed.
+        return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
+                navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    }
+
+    if (hasGetUserMedia()) {
+        // Good to go!
+    } else {
+        alert('getUserMedia() is not supported in your browser');
+    }
+
+    window.URL = window.URL || window.webkitURL;
+    navigator.getUserMedia  = navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia ||
+            navigator.msGetUserMedia;
+
+    var video = document.querySelector('video');
+    var canvas = document.querySelector('#video-canvas');
+    var qrCanvas = document.querySelector('#qr-canvas');
+    var $output = document.querySelector('#output');
+    var streamRecorder;
+    var webcamstream;
+    var webcam = document.getElementById('webcam');
+
+    if (navigator.getUserMedia) {
+        navigator.getUserMedia({audio: true, video: true}, function(stream) {
+            webcam.src = window.URL.createObjectURL(stream);
+            webcamstream = stream;
+//  streamrecorder = webcamstream.record();
+        }, onVideoFail);
+    } else {
+        alert ('failed');
+    }
+
+    function startRecording() {
+        streamRecorder = webcamstream.record();
+        setTimeout(stopRecording, 10000);
+    }
+    function stopRecording() {
+        streamRecorder.getRecordedData(postVideoToServer);
+    }
+    function postVideoToServer(videoblob) {
+
+        var data = {};
+        data.video = videoblob;
+        data.metadata = 'test metadata';
+        data.action = "upload_video";
+        jQuery.post("http://www.foundthru.co.uk/uploadvideo.php", data, onUploadSuccess);
+    }
+    function onUploadSuccess() {
+        alert ('video uploaded');
+    }
+
+    var scale = 1;
+    qrcode.callback = function(code){
+        alert(code);
+    };
+
+
+    var captureImage = function() {
+
+        requestAnimationFrame(function(){
+            canvas.width = video.videoWidth * scale;
+            canvas.height = video.videoHeight * scale;
+            var context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var qrX = 200;
+            var qrY = 100;
+            var qrXWidth = 200;
+            var qrXHeight = 200;
+
+
+            //var img = document.createElement("img");
+            //img.src = canvas.toDataURL();
+            //$output.appendChild(img);
+
+
+
+            qrCanvas.width = qrXWidth;
+            qrCanvas.height = qrXHeight;
+            var qrContext = qrCanvas.getContext('2d');
+            var img = new Image();
+
+            qrContext.drawImage(canvas, qrX, qrY, qrXWidth, qrXHeight, 0, 0, qrXWidth, qrXHeight);
+
+
+            context.beginPath();
+            context.rect(qrX, qrY, qrXWidth, qrXHeight);
+            context.lineWidth = 7;
+            context.strokeStyle = 'black';
+            context.stroke();
+
+
+            try {
+                qrcode.decode();
+            } catch (e) {
+            }
+            captureImage();
+        });
+
+    };
+
+    function startCapture(){
+        captureImage();
+    }
+
+    //qrcode.decode('http://api.qrserver.com/v1/create-qr-code/?color=000000&bgcolor=FFFFFF&data=test&qzone=1&margin=0&size=400x400&ecc=L');
+
+</script>
+
+
+
+</body>
+</html>
