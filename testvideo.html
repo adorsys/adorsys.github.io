@@ -69,7 +69,7 @@
     var webcam = document.getElementById('webcam');
 
     if (navigator.getUserMedia) {
-        navigator.getUserMedia({audio: true, video: true}, function(stream) {
+        navigator.getUserMedia({audio: false, video: true}, function(stream) {
             webcam.src = window.URL.createObjectURL(stream);
             webcamstream = stream;
 //  streamrecorder = webcamstream.record();
@@ -121,11 +121,9 @@
             //$output.appendChild(img);
 
 
-
             qrCanvas.width = qrXWidth;
             qrCanvas.height = qrXHeight;
             var qrContext = qrCanvas.getContext('2d');
-            var img = new Image();
 
             qrContext.drawImage(canvas, qrX, qrY, qrXWidth, qrXHeight, 0, 0, qrXWidth, qrXHeight);
 
